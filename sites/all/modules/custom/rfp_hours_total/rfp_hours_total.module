@@ -1,0 +1,72 @@
+<?php
+function rfp_hours_total_block_info() {
+  $blocks[0] = array(
+    'info' => t('RFP Hours Total'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+  
+function rfp_hours_total_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+  case 0:
+    $block[0] = t('Total Hours');
+    $block['content'] = hours_total(arg(1));
+    break;
+  }
+  return $block;
+}
+
+function hours_total($nid = 0){
+  $rate = 100;
+  $general_hours = 0;
+  $custom_hours = 0;
+  $ret_val = "<hr />";
+  
+  //GENERAL HOURS
+  $query = "SELECT n.title as title,
+    ffh.field_functionality_hours_value as custhours
+    FROM {node} n, {field_data_field_functionality_hours} ffh, {field_data_field_functionality_reference} ffr
+    WHERE ffr.entity_id = " . $nid . "
+      AND ffr.field_functionality_reference_nid = ffh.entity_id 
+      AND ffh.entity_id = n.nid";
+  $result = db_query($query);
+  //print_r($result);
+  $ret_val .= "<h2>GENERAL FUNCTIONALITY HOURS</h2>";
+  foreach($result as $record){
+    $ret_val .= "<h3>" . $record->title . ": " . $record->custhours . "</h3>";
+    $general_hours += $record->custhours;
+  }
+  
+  
+  
+  //CUSTOM HOURS
+  $query = "SELECT cfh.field_custom_functionality_hours_second AS custhours,
+    cfh.field_custom_functionality_hours_first AS title
+    FROM {field_data_field_custom_functionality_hours} cfh
+    WHERE cfh.entity_id = " . $nid;
+  $result = db_query($query);
+  //print_r($result);
+  $ret_val .= "<h2>CUSTOM FUNCTIONALITY HOURS</h2>";
+  foreach($result as $record){
+    $ret_val .= "<h3>" . $record->title . ": " . $record->custhours . "</h3>";
+    $custom_hours += $record->custhours;
+  }
+  
+  //RATE
+  $query = "SELECT fr.field_rate_value AS rate 
+    FROM {field_data_field_rate} fr 
+    WHERE fr.entity_id = " . $nid;
+  //echo $query;
+  $result = db_query($query);
+  
+  foreach($result as $record){
+    $rate = $record->rate;
+  }
+
+  $total_hours = $general_hours + $custom_hours;
+  $ret_val .= "<h2>TOTAL HOURS: " . $total_hours . "</h2>
+    <h2>TOTAL COST: $" . $total_hours * $rate . " </h2>";
+  return $ret_val;
+}

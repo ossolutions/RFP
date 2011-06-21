@@ -1,0 +1,3 @@
+core = "7.x"
+description = "Provides an aggregate total for all the hours on an RFP."
+name = "RFP HOURS TOTAL"
